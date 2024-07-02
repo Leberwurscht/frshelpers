@@ -8,7 +8,7 @@ read version
 echo "$version" > VERSION
 git add VERSION
 git commit -m "set version"
-#git push origin
+git push origin
 
 git tag -a v"$version" -m "version $version"
-#git push origin v"$version"
+git push origin v"$version"

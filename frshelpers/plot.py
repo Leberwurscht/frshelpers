@@ -70,7 +70,7 @@ def allandeviation(data, overlapping=False, return_error=False):
 def plot_allan(data, ax=None, t_multiplier=1, **kwargs):
   if ax is None: ax = plt.gca()
 
-  colors = plt.cm.turbo(np.linspace(0,1,data.shape[0]))
+  colors = plt.cm.turbo_r(np.linspace(0,1,data.shape[0]))
 
   for line_data, color in zip(data, colors):
     t,ad,corridor_lower,corridor_upper = allandeviation(line_data, return_error=True)
