@@ -7,7 +7,7 @@ with open("VERSION", "r") as fh:
     version = fh.read().strip()
 
 setuptools.setup(
-    name="frseval",
+    name="frshelpers",
     version=version,
     author="Leberwurscht",
     author_email="leberwurscht@hoegners.de",
