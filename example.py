@@ -87,6 +87,7 @@ weights = abs(nu-nu_center)<nu_span/2
 
 # first step: do amplitude normalization and spectral phase normalization on each trace
 operations = jit(chunkiter.chain(
+  lambda chunk: chunk.astype(float),
   ops.complex_to_polar(),
   chunkiter.per_entry(ops.identity(), ops.unwrap(nu.size)),
   chunkiter.per_entry(ops.cancel_polyfit(nu, weights=weights, degree=0, operation="divide"), ops.cancel_polyfit(nu, weights=weights, degree=1, operation="subtract", asymmetric=True)),

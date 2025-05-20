@@ -13,7 +13,10 @@ except ModuleNotFoundError:
   pass
 
 def subtract_mean(use_jax=False):
-  return lambda chunk: chunk - chunk.mean(axis=-1)[:,None]
+  if use_jax: np = jax.numpy
+  else: np = numpy
+
+  return lambda chunk: chunk - np.nanmean(chunk, axis=-1)[:,None]
 
 def multiply(window, use_jax=False):
   return lambda chunk: chunk*window[None,:]

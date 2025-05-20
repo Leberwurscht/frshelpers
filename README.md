@@ -7,6 +7,7 @@ Evaluation of long-term measurements in time-domain spectroscopy / field-resolve
 ![Allan deviation plots](allan_deviation.png "Evaluation plots") 
 
 This is a Python package containing useful [chunkiter](https://gitlab.com/leberwurscht/chunkiter) operations and plotting functions for this task, and an example script is also provided (example.py).
+New: also a function to do the evaluation, see frshelpers/evaluation.py, function `evaluate()`.
 
 Installation:
 
