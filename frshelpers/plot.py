@@ -72,12 +72,17 @@ def plot_allan(data, ax=None, t_multiplier=1, **kwargs):
 
   colors = plt.cm.turbo_r(np.linspace(0,1,data.shape[0]))
 
+  ads = []
+
   for line_data, color in zip(data, colors):
     t,ad,corridor_lower,corridor_upper = allandeviation(line_data, return_error=True)
     t = t * t_multiplier
 
     ax.fill_between(t, corridor_lower, corridor_upper, alpha=0.2, color=color, **kwargs)
     ax.plot(t, ad, color=color, **kwargs)
+    ads.append(ad)
 
   ax.set_xscale("log")
   ax.set_yscale("log")
+
+  return t,np.array(ads)

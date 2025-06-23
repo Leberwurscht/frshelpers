@@ -258,7 +258,7 @@ def evaluate(input_data, **kwargs):
     ax.set_title("after {}-spectra-average".format(average_traces))
   
     ax = fig.add_subplot(gs[3,column])
-    frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces, ax=ax)
+    t, ads = frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces, ax=ax)
     ax.grid(True, which="major", color="0.65")
     ax.grid(True, which="minor", color="0.85")
     ax.set_ylim(ylim_ad)
@@ -268,6 +268,7 @@ def evaluate(input_data, **kwargs):
     ax.set_xlabel("averaged spectra")
   
     if column==0:
+      ads_amp = ads
       ax.set_ylabel("relative amplitude precision")
       ax2 = ax.secondary_yaxis(1.01, functions=(
         functools.partial(frshelpers.plot.relamp_to_OD,OD_unit=1e-3),
@@ -275,6 +276,7 @@ def evaluate(input_data, **kwargs):
       ))
       ax2.set_ylabel("LOD (mOD)")
     else:
+      ads_phase = ads
       ax.set_ylabel("phase precision (rad)")
       ax2 = ax.secondary_yaxis(1.01, functions=(
         functools.partial(frshelpers.plot.relamp_to_temporaljitter,nu=nu_center,t_unit=1e-18),
@@ -286,4 +288,4 @@ def evaluate(input_data, **kwargs):
 
   if kwargs.setdefault("show", True): plt.show()
 
-  return kwargs
+  return t, bin_centers, ads_amp, ads_phase, kwargs
