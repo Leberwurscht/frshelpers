@@ -110,6 +110,8 @@ def evaluate(input_data, **kwargs):
   normalize_phase = kwargs.setdefault("normalize_phase", True)
 
   only_even = kwargs.setdefault("only_even", False)
+
+  waveform_rate = kwargs.setdefault("waveform_rate", None)
   
   ### checks
   
@@ -243,7 +245,7 @@ def evaluate(input_data, **kwargs):
   
     ax = fig.add_subplot(gs[1,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit_firsttraces/1e-2) if column==0 else "{:.1f} mrad".format(unit_firsttraces/1e-3)
-    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data_beforeavg[:50,:].T/unit_firsttraces, corridor_label=corridor_label, ax=ax)
+    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data_beforeavg[:50,:].T/unit_firsttraces, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data_beforeavg[:50,:].shape[0]))
     ax.set_title("first spectra")
     ax.set_ylabel("spectrum number")
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
@@ -251,14 +253,21 @@ def evaluate(input_data, **kwargs):
   
     ax = fig.add_subplot(gs[2,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit/1e-2) if column==0 else "{:.1f} mrad".format(unit/1e-3)
-    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=np.arange(data.shape[0])*average_traces)
+    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data.shape[0])*average_traces)
     ax.set_ylabel("spectrum number")
     plt.tick_params(labelbottom=False, bottom=False) 
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
     ax.set_title("after {}-spectra-average".format(average_traces))
+
+    if waveform_rate is not None:
+      ax_labtime = ax.secondary_yaxis(1.01, functions=(
+        lambda ntraces: ntraces*waveform_rate**-1,
+        lambda avgtime: avgtime/waveform_rate**-1,
+      ))
+      ax_labtime.set_ylabel("laboratory time (s)")
   
     ax = fig.add_subplot(gs[3,column])
-    t, ads = frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces, ax=ax)
+    t, ads = frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces*(2 if only_even else 1), ax=ax)
     ax.grid(True, which="major", color="0.65")
     ax.grid(True, which="minor", color="0.85")
     ax.set_ylim(ylim_ad)
@@ -266,6 +275,13 @@ def evaluate(input_data, **kwargs):
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
   
     ax.set_xlabel("averaged spectra")
+
+    if waveform_rate is not None:
+      ax_avgt = ax.secondary_xaxis(1.01, functions=(
+        lambda ntraces: ntraces*waveform_rate**-1,
+        lambda avgtime: avgtime/waveform_rate**-1,
+      ))
+      ax_avgt.set_xlabel("averaging time (s)")
   
     if column==0:
       ads_amp = ads
