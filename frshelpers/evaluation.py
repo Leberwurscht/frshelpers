@@ -158,34 +158,30 @@ def evaluate(input_data, **kwargs):
   spectra = chunkiter.apply(operations, spectra)
 
   # time domain plot
-#  if kwargs.setdefault("td_plot_after", None) is not None:
-#    # cache result so that we can apply a different set of operations without consuming the iterator
-#    spectra = chunkiter.cache(((np.array(amplitude_part),np.array(phase_part)) for amplitude_part,phase_part in spectra))
-#  
-#    avg = kwargs["td_plot_after"]
-#  
-#    delay = fourioso.itransform(nu-nu[nu.size//2])
-#    #nuwindow = fourioso.tools.piecewise_cossqr(np.linspace(nu.min(),nu.max(),nu.size), [27e12, 28e12, 39e12, 40e12], [0, 1, 1, 0]) # adapt
-#    operations = (chunkiter.chain(
-#      #ops.multiply(nuwindow), # can be tried out to improve results
-#      ops.polar_to_complex(),
-#      ops.inverse_fourier_transform(axis=nu),
-#    ))
-#    traces_td = chunkiter.apply(operations, spectra)
-#    traces_td = chunkiter.tools.batchavg(traces_td, max(1,int(avg/average_traces)), allow_remainder=True)
-#    first_traces, traces_td = chunkiter.tools.peek(iter(traces_td))
-#    plt.figure()
-#    maxvalue = abs(first_traces[0,:]).max()
-#    t0 = delay[np.argmax(abs(first_traces[0,:]))]
-#    plt.plot(delay-t0, abs(first_traces[0,:])/maxvalue, label="first")
-#    plt.plot(delay-t0, abs(first_traces[0,:]-first_traces[1,:])/maxvalue, label="difference")
-#    plt.plot(delay-t0, abs(abs(first_traces[0,:])-abs(first_traces[1,:]))/maxvalue, label="difference abs")
-#    plt.legend()
-#    plt.yscale("log")
-#    plt.ylim((1e-7,1))
-#    plt.title("avg = {}".format(avg))
-#    plt.grid()
-#    plt.savefig("timedomain_dynamicrange.png")
+  if kwargs.setdefault("td_plot", False):
+    # cache result so that we can apply a different set of operations without consuming the iterator
+    spectra = chunkiter.cache(((np.array(amplitude_part),np.array(phase_part)) for amplitude_part,phase_part in spectra))
+    ntraces = spectra.shape[-1][0]*average_traces
+
+    avgsize = kwargs.setdefault("td_plot_avgsize", ((ntraces//average_traces)//2)*average_traces )
+
+    delay_tdplot = fourioso.itransform(nu-nu[nu.size//2])
+    #nuwindow = fourioso.tools.piecewise_cossqr(np.linspace(nu.min(),nu.max(),nu.size), [27e12, 28e12, 39e12, 40e12], [0, 1, 1, 0]) # adapt
+    operations = (chunkiter.chain(
+      #ops.multiply(nuwindow), # can be tried out to improve results
+      ops.polar_to_complex(),
+      ops.inverse_fourier_transform(axis=nu),
+    ))
+    traces_td = chunkiter.apply(operations, spectra)
+    traces_td = chunkiter.tools.batchavg(traces_td, max(1,int(avgsize/average_traces)), allow_remainder=True)
+    first_traces, traces_td = chunkiter.tools.peek(iter(traces_td))
+
+    maxvalue = abs(first_traces[0,:]).max()
+    t0 = delay_tdplot[np.argmax(abs(first_traces[0,:]))]
+    delay_tdplot -= t0
+    trace1_tdplot = first_traces[0,:]/maxvalue
+    trace2_tdplot = first_traces[1,:]/maxvalue
+
   
   # compute relative amplitude change and phase for a few frequency bins
   bincenters_i = np.searchsorted(nu, bin_centers)
@@ -201,10 +197,12 @@ def evaluate(input_data, **kwargs):
   
   # plotting
   fig = plt.figure(figsize=(16,9), constrained_layout=True)
-  gs = fig.add_gridspec(4,2)
+
+  gs = fig.add_gridspec(5 if kwargs.setdefault("td_plot", False) else 4,2)
+  row_inc = 1 if kwargs.setdefault("td_plot", False) else 0
   
   for column, (data_beforeavg,data) in enumerate(zip([relampchanges_beforeavg, phases_beforeavg], [relampchanges, phases])):
-    ax = fig.add_subplot(gs[0,column])
+    ax = fig.add_subplot(gs[0+row_inc,column])
     where = abs(nu-nu_center)<nu_span/2
   
     ax.set_xlim(np.array(xlim)/1e12)
@@ -243,7 +241,7 @@ def evaluate(input_data, **kwargs):
       axt.plot(nu[where]/1e12, first_amps[1,:][where]**2, ':', color='tab:blue')
       axt.tick_params(labelright=False, right=False)
   
-    ax = fig.add_subplot(gs[1,column], sharex=ax)
+    ax = fig.add_subplot(gs[1+row_inc,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit_firsttraces/1e-2) if column==0 else "{:.1f} mrad".format(unit_firsttraces/1e-3)
     frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data_beforeavg[:50,:].T/unit_firsttraces, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data_beforeavg[:50,:].shape[0]))
     ax.set_title("first spectra")
@@ -251,7 +249,7 @@ def evaluate(input_data, **kwargs):
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
     plt.tick_params(labelbottom=False, bottom=False) 
   
-    ax = fig.add_subplot(gs[2,column], sharex=ax)
+    ax = fig.add_subplot(gs[2+row_inc,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit/1e-2) if column==0 else "{:.1f} mrad".format(unit/1e-3)
     frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data.shape[0])*average_traces)
     ax.set_ylabel("spectrum number")
@@ -266,7 +264,7 @@ def evaluate(input_data, **kwargs):
       ))
       ax_labtime.set_ylabel("laboratory time (s)")
   
-    ax = fig.add_subplot(gs[3,column])
+    ax = fig.add_subplot(gs[3+row_inc,column])
     t, ads = frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces*(2 if only_even else 1), ax=ax)
     ax.grid(True, which="major", color="0.65")
     ax.grid(True, which="minor", color="0.85")
@@ -299,9 +297,48 @@ def evaluate(input_data, **kwargs):
         functools.partial(frshelpers.plot.temporaljitter_to_relamp,nu=nu_center,t_unit=1e-18)
       ))
       ax2.set_ylabel("phase precision ({:.1f}-THz-as)".format(nu_center/1e12))
+
+  if kwargs.setdefault("td_plot", False):
+    ax = fig.add_subplot(gs[0,0])
+
+    ax.plot(delay_tdplot/1e-12, trace1_tdplot, label="avg({}-{})".format(1,avgsize))
+    ax.plot(delay_tdplot/1e-12, trace2_tdplot, label="avg({}-{})".format(avgsize+1,2*avgsize))
+    ax.plot(delay_tdplot/1e-12, trace1_tdplot-trace2_tdplot, label="difference")
+    ax.legend(loc=1)
+    ax.set_title("averaged traces")
+    ax.grid()
+    ax.set_xlabel("t (fs)")
+    ax.set_ylabel("signal")
+
+    ax = fig.add_subplot(gs[0,1])
+    ax.plot(delay_tdplot/1e-12, abs(trace1_tdplot), label="avg({}-{})".format(1,avgsize))
+    ax.plot(delay_tdplot/1e-12, abs(trace2_tdplot), label="avg({}-{})".format(avgsize+1,2*avgsize))
+    ax.plot(delay_tdplot/1e-12, abs(trace1_tdplot-trace2_tdplot), label="difference")
+    ax.legend(loc=1)
+    ax.set_yscale("log")
+    ax.set_ylim((1e-7,1))
+    ax.set_title("averaged traces (log)")
+    ax.set_xlabel("t (fs)")
+    ax.set_ylabel("signal")
+    ax.grid()
   
   if kwargs.setdefault("savefig", None) is not None: plt.savefig(kwargs["savefig"])
 
   if kwargs.setdefault("show", True): plt.show()
+
+  if kwargs.setdefault("save", None):
+    data = dict(
+      t=t,
+      bin_centers=bin_centers,
+      ads_amp=ads_amp,
+      ads_phase=ads_phase
+    )
+    if kwargs.setdefault("td_plot", False):
+      data.update(dict(
+        td_delay=delay_tdplot,
+        td_trace1=trace1_tdplot,
+        td_trace2=trace2_tdplot
+      ))
+    np.savez(kwargs["save"], **data)
 
   return t, bin_centers, ads_amp, ads_phase, kwargs
