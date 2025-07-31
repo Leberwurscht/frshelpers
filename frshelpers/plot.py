@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 import allantools
 import fourioso
+import binreduce
 
 relamp_to_relint = lambda relamp: 1-(1-relamp)**2
 relint_to_relamp = lambda relint: 1-(1-relint)**.5
@@ -31,7 +32,7 @@ def spectral_phase_without_CEP_and_GD(nu, complex_spectrum, weights=None):
 
   return np.angle(complex_spectrum)
 
-def plot_bin_evolution(bin_centers, corridor_width, data, corridor_label=None, ax=None, plot_corridor=True, t=None, **kwargs):
+def plot_bin_evolution(bin_centers, corridor_width, data, corridor_label=None, ax=None, plot_corridor=True, t=None, binaverage=None, **kwargs):
   """
     plots the temporal evolution of a binned quantity along the y axis
 
@@ -43,6 +44,12 @@ def plot_bin_evolution(bin_centers, corridor_width, data, corridor_label=None, a
 
   if ax is None: ax = plt.gca()
   if t is None: t = np.arange(data.shape[-1])
+
+  if binaverage is not None:
+    print(data.shape, t.size, binaverage)
+    data = binreduce.binmean(data.T, np.arange(0,data.shape[1],binaverage)).T
+    print(data.shape, t.size)
+    t = binreduce.binmean(t, np.arange(0,t.size,binaverage))
 
   colors = plt.cm.turbo_r(np.linspace(0,1,bin_centers.size))
 

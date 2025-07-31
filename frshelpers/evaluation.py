@@ -112,6 +112,8 @@ def evaluate(input_data, **kwargs):
   only_even = kwargs.setdefault("only_even", False)
 
   waveform_rate = kwargs.setdefault("waveform_rate", None)
+
+  evolution_binaverage = kwargs.setdefault("evolution_binaverage", None)
   
   ### checks
   
@@ -251,11 +253,12 @@ def evaluate(input_data, **kwargs):
   
     ax = fig.add_subplot(gs[2+row_inc,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit/1e-2) if column==0 else "{:.1f} mrad".format(unit/1e-3)
-    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data.shape[0])*average_traces)
+    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data.shape[0])*average_traces, binaverage=evolution_binaverage)
     ax.set_ylabel("spectrum number")
     plt.tick_params(labelbottom=False, bottom=False) 
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
-    ax.set_title("after {}-spectra-average".format(average_traces))
+    if evolution_binaverage is not None: ax.set_title("after {}-spectra-average ({}-samples-boxcar-smoothed)".format(average_traces, evolution_binaverage))
+    else: ax.set_title("after {}-spectra-average".format(average_traces))
 
     if waveform_rate is not None:
       ax_labtime = ax.secondary_yaxis(1.01, functions=(
