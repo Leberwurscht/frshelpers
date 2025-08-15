@@ -174,9 +174,9 @@ def evaluate(input_data, **kwargs):
   spectra = chunkiter.apply(operations, spectra)
 
   if waveform_rate is not None:
-    spectra = print_count(spectra, text="frshelpers.evaluate: preprocessed {:.3f} seconds of data", multiplier=waveform_rate**-1)
+    spectra = print_count(spectra, text="frshelpers.evaluate: preprocessed {:.3f} seconds of data", multiplier=waveform_rate**-1*average_traces)
   else:
-    spectra = print_count(spectra, text="frshelpers.evaluate: preprocessed {} traces", multiplier=1)
+    spectra = print_count(spectra, text="frshelpers.evaluate: preprocessed {} traces", multiplier=1*average_traces)
 
   spectra = print_time(spectra, text="frshelpers.evaluate: took {:.3f} seconds so far")
 
