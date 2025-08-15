@@ -64,10 +64,13 @@ def plot_bin_evolution(bin_centers, corridor_width, data, corridor_label=None, a
     if corridor_label is not None: ax.legend(loc=1, framealpha=1)
 
 def allandeviation(data, overlapping=False, return_error=False):
+  print("computing allan deviation...")
   func = allantools.oadev if overlapping else allantools.adev
   taus = np.logspace(0, np.log10(data.size/2), 200)
   t, ad, ad_error, _ = func(data, rate=1, data_type="freq", taus=taus)
   corridor_lower, corridor_upper = ad-ad_error, ad+ad_error
+
+  print("computed allan deviation.")
 
   if return_error:
     return t, ad, corridor_lower, corridor_upper

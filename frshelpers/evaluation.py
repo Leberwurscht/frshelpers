@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, functools, itertools
+import os, sys, functools, itertools, time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,6 +31,20 @@ def read_csv_from_folder(folder):
       break
 
     yield data[None,:] # reshape to 1 x ... to respect chunkiter convention
+
+def print_time(iterator, text="{}"):
+  t_start = time.time()
+  for i in iterator:
+    print(text.format(time.time()-t_start))
+    yield i
+
+def print_count(iterator, text="{}", multiplier=1):
+  cnt = 0
+  for i in iterator:
+    if type(i)==tuple: cnt += i[-1].shape[0]
+    else: cnt += i.shape[0]
+    print(text.format(cnt*multiplier))
+    yield i
 
 def evaluate(input_data, **kwargs):
   """
@@ -158,6 +172,13 @@ def evaluate(input_data, **kwargs):
     chunkiter.per_entry(ops.cancel_polyfit(nu, weights=weights, degree=0, operation="divide") if normalize_amplitude else ops.identity(), ops.cancel_polyfit(nu, weights=weights, degree=1, operation="subtract", asymmetric=True) if normalize_phase else ops.identity()),
   ))
   spectra = chunkiter.apply(operations, spectra)
+
+  if waveform_rate is not None:
+    spectra = print_count(spectra, text="frshelpers.evaluate: preprocessed {:.3f} seconds of data", multiplier=waveform_rate**-1)
+  else:
+    spectra = print_count(spectra, text="frshelpers.evaluate: preprocessed {} traces", multiplier=1)
+
+  spectra = print_time(spectra, text="frshelpers.evaluate: took {:.3f} seconds so far")
 
   # time domain plot
   if kwargs.setdefault("td_plot", False):
