@@ -45,25 +45,45 @@ def polar_to_complex(use_jax=False):
 
   return lambda chunk: chunk[0]*np.exp(1j*chunk[1])
 
-def unwrap(N_pts, use_jax=False):
+def unwrap(N_pts, use_jax=False, evenodd_separate=False):
   if use_jax: np = jax.numpy
   else: np = numpy
 
-  initial_angle = np.full(N_pts, np.nan)
+  if evenodd_separate:
+    last_angles = np.full((2,N_pts), np.nan)
 
-  def process_chunk(chunk, carry):
-    angles, initial_angle = chunk, carry
+    def process_chunk(chunk, carry):
+      angles, last_angles = chunk, carry
 
-    initial_angle = np.where(np.isfinite(initial_angle), initial_angle, angles[0,:])
+      initial_angles = np.unwrap(angles[:2,:], axis=0)
+      last_angles = np.where(np.isfinite(last_angles), last_angles, initial_angles)
 
-    angles = np.concatenate((initial_angle[None,:], chunk), axis=0)
-    angles = np.unwrap(angles, axis=0)
+      angles_even = np.concatenate((last_angles[::2,:], chunk[::2,:]), axis=0)
+      angles_odd = np.concatenate((last_angles[1::2,:], chunk[1::2,:]), axis=0)
+      angles_even = np.unwrap(angles_even, axis=0)
+      angles_odd = np.unwrap(angles_odd, axis=0)
 
-    chunk, carry = angles[1:,:], angles[-1,:]
-    return chunk, carry
+      angles = np.concatenate((angles_even, angles_odd), axis=1)
+      angles = angles.reshape((angles_even.shape[0]*2, angles_even.shape[1]))
+
+      chunk, carry = angles[2:,:], angles[-2,:]
+      return chunk, carry
+  else:
+    last_angles = np.full(N_pts, np.nan)
+
+    def process_chunk(chunk, carry):
+      angles, last_angles = chunk, carry
+
+      last_angles = np.where(np.isfinite(last_angles), last_angles, angles[0,:])
+
+      angles = np.concatenate((last_angles[None,:], chunk), axis=0)
+      angles = np.unwrap(angles, axis=0)
+
+      chunk, carry = angles[1:,:], angles[-1,:]
+      return chunk, carry
 
   process_chunk.has_carry = True
-  process_chunk.initial_carry = initial_angle
+  process_chunk.initial_carry = last_angles
 
   return process_chunk
 
