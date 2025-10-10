@@ -59,12 +59,20 @@ def unwrap(N_pts, use_jax=False, evenodd_separate=False):
       last_angles = np.where(np.isfinite(last_angles), last_angles, initial_angles)
 
       angles_even = np.concatenate((last_angles[::2,:], chunk[::2,:]), axis=0)
-      angles_odd = np.concatenate((last_angles[1::2,:], chunk[1::2,:]), axis=0)
+
+      if chunk.shape[0]%2==1:
+        angles_odd = np.concatenate((last_angles[1::2,:], chunk[1::2,:], np.full((1,N_pts), np.nan)), axis=0)
+      else:
+        angles_odd = np.concatenate((last_angles[1::2,:], chunk[1::2,:]), axis=0)
+
       angles_even = np.unwrap(angles_even, axis=0)
       angles_odd = np.unwrap(angles_odd, axis=0)
 
       angles = np.concatenate((angles_even, angles_odd), axis=1)
       angles = angles.reshape((angles_even.shape[0]*2, angles_even.shape[1]))
+
+      if chunk.shape[0]%2==1:
+        angles = angles[:-1,:]
 
       chunk, carry = angles[2:,:], angles[-2,:]
       return chunk, carry
