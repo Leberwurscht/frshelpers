@@ -124,6 +124,7 @@ def evaluate(input_data, **kwargs):
   normalize_phase = kwargs.setdefault("normalize_phase", True)
 
   only_even = kwargs.setdefault("only_even", False)
+  only_odd = kwargs.setdefault("only_odd", False)
 
   waveform_rate = kwargs.setdefault("waveform_rate", None)
 
@@ -141,10 +142,16 @@ def evaluate(input_data, **kwargs):
   spectra = (check(i) for i in spectra)
 
   #
+  assert not (only_even and only_odd), "you can't use only_even=True and only_odd=True at the same time"
   if only_even:
     chunksize = first_spectra.shape[0]
     if not chunksize%2==0: spectra = chunkiter.rechunk(spectra, chunksize+1)
     spectra = (spectra_part[::2,...] for spectra_part in spectra)
+    spectra = chunkiter.rechunk(spectra, chunksize+1)
+  if only_odd:
+    chunksize = first_spectra.shape[0]
+    if not chunksize%2==0: spectra = chunkiter.rechunk(spectra, chunksize+1)
+    spectra = (spectra_part[1::2,...] for spectra_part in spectra)
     spectra = chunkiter.rechunk(spectra, chunksize+1)
   
   ### operations on data
@@ -243,6 +250,7 @@ def evaluate(input_data, **kwargs):
       ax.set_ylabel("PSD (arb. u.)")
       ax.legend(loc=1)
       if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
+      if only_odd: ax.text(0,1.," only odd", transform=ax.transAxes, va="top")
     else:
       if normalize_phase: ax.axvspan((nu_center_normalization-nu_span_normalization/2)/1e12, (nu_center_normalization+nu_span_normalization/2)/1e12, alpha=0.2, color='tab:orange')
 
@@ -258,6 +266,7 @@ def evaluate(input_data, **kwargs):
       ax.set_ylabel("phase (rad)")
       ax.legend(loc=1)
       if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
+      if only_odd: ax.text(0,1.," only odd", transform=ax.transAxes, va="top")
   
       axt = ax.twinx()
       axt.plot(nu[where]/1e12, first_amps[0,:][where]**2, 'k:')
@@ -266,18 +275,20 @@ def evaluate(input_data, **kwargs):
   
     ax = fig.add_subplot(gs[1+row_inc,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit_firsttraces/1e-2) if column==0 else "{:.1f} mrad".format(unit_firsttraces/1e-3)
-    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data_beforeavg[:50,:].T/unit_firsttraces, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data_beforeavg[:50,:].shape[0]))
+    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data_beforeavg[:50,:].T/unit_firsttraces, corridor_label=corridor_label, ax=ax, t=(2 if (only_even or only_odd) else 1)*np.arange(data_beforeavg[:50,:].shape[0]))
     ax.set_title("first spectra")
     ax.set_ylabel("spectrum number")
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
+    if only_odd: ax.text(0,1.," only odd", transform=ax.transAxes, va="top")
     plt.tick_params(labelbottom=False, bottom=False) 
   
     ax = fig.add_subplot(gs[2+row_inc,column], sharex=ax)
     corridor_label = "{:.1f}%".format(unit/1e-2) if column==0 else "{:.1f} mrad".format(unit/1e-3)
-    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=(2 if only_even else 1)*np.arange(data.shape[0])*average_traces, binaverage=evolution_binaverage)
+    frshelpers.plot.plot_bin_evolution(bin_centers/1e12, np.diff(bin_centers).mean()/4/1e12, data.T/unit, corridor_label=corridor_label, ax=ax, t=(2 if (only_even or only_odd) else 1)*np.arange(data.shape[0])*average_traces, binaverage=evolution_binaverage)
     ax.set_ylabel("spectrum number")
     plt.tick_params(labelbottom=False, bottom=False) 
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
+    if only_odd: ax.text(0,1.," only odd", transform=ax.transAxes, va="top")
     if evolution_binaverage is not None: ax.set_title("after {}-spectra-average ({}-samples-boxcar-smoothed)".format(average_traces, evolution_binaverage))
     else: ax.set_title("after {}-spectra-average".format(average_traces))
 
@@ -289,12 +300,13 @@ def evaluate(input_data, **kwargs):
       ax_labtime.set_ylabel("laboratory time (s)")
   
     ax = fig.add_subplot(gs[3+row_inc,column])
-    t, ads = frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces*(2 if only_even else 1), ax=ax)
+    t, ads = frshelpers.plot.plot_allan(data.T, t_multiplier=average_traces*(2 if (only_even or only_odd) else 1), ax=ax)
     ax.grid(True, which="major", color="0.65")
     ax.grid(True, which="minor", color="0.85")
     ax.set_ylim(ylim_ad)
     ax.set_xlim((1, data.shape[0]*average_traces))
     if only_even: ax.text(0,1.," only even", transform=ax.transAxes, va="top")
+    if only_odd: ax.text(0,1.," only odd", transform=ax.transAxes, va="top")
   
     ax.set_xlabel("averaged spectra")
 
