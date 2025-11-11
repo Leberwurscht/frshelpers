@@ -161,8 +161,8 @@ def evaluate(input_data, **kwargs):
   operations = jit(chunkiter.chain(
     lambda chunk: chunk.astype(complex),
     ops.complex_to_polar(),
-    chunkiter.per_entry(ops.identity(), ops.unwrap(nu.size, evenodd_separate=True)),
-    chunkiter.per_entry(ops.cancel_polyfit(nu, weights=weights, degree=0, operation="divide") if normalize_amplitude else ops.identity(), ops.cancel_polyfit(nu, weights=weights, degree=1, operation="subtract", asymmetric=True) if normalize_phase else ops.identity()),
+    #chunkiter.per_entry(ops.identity(), ops.unwrap(nu.size, evenodd_separate=True)),
+    chunkiter.per_entry(ops.cancel_polyfit(nu, weights=weights, degree=0, operation="divide") if normalize_amplitude else ops.identity(), ops.cancel_polyfit(nu, weights=weights, degree=1, operation="subtract", asymmetric=True, unwrap=True) if normalize_phase else ops.identity()),
   ))
   spectra = chunkiter.apply(operations, spectra)
   
@@ -175,8 +175,8 @@ def evaluate(input_data, **kwargs):
   
   operations = jit(chunkiter.chain(
     ops.complex_to_polar(),
-    chunkiter.per_entry(ops.identity(), ops.unwrap(nu.size, evenodd_separate=True)),
-    chunkiter.per_entry(ops.cancel_polyfit(nu, weights=weights, degree=0, operation="divide") if normalize_amplitude else ops.identity(), ops.cancel_polyfit(nu, weights=weights, degree=1, operation="subtract", asymmetric=True) if normalize_phase else ops.identity()),
+    #chunkiter.per_entry(ops.identity(), ops.unwrap(nu.size, evenodd_separate=True)),
+    chunkiter.per_entry(ops.cancel_polyfit(nu, weights=weights, degree=0, operation="divide") if normalize_amplitude else ops.identity(), ops.cancel_polyfit(nu, weights=weights, degree=1, operation="subtract", asymmetric=True, unwrap=True) if normalize_phase else ops.identity()),
   ))
   spectra = chunkiter.apply(operations, spectra)
 
