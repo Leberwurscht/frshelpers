@@ -95,7 +95,7 @@ def unwrap(N_pts, use_jax=False, evenodd_separate=False):
 
   return process_chunk
 
-def cancel_polyfit(nu, weights, degree=1, use_jax=False, operation="subtract", initial=None, asymmetric=False):
+def cancel_polyfit(nu, weights, degree=1, use_jax=False, operation="subtract", initial=None, asymmetric=False, unwrap=False):
   if use_jax: np = jax.numpy
   else: np = numpy
 
@@ -111,7 +111,9 @@ def cancel_polyfit(nu, weights, degree=1, use_jax=False, operation="subtract", i
     initial = np.where(np.isfinite(carry), carry, chunk[0,:])
     carry = initial
 
-    fit = np.polyfit(nu, operation(chunk, initial[None,:]).T, degree, w=weights)
+    after_op = operation(chunk, initial[None,:])
+    if unwrap: after_op = np.unwrap(after_op, axis=-1)
+    fit = np.polyfit(nu, after_op.T, degree, w=weights)
 
     fitted = 0
     for i in range(degree+1):
