@@ -14,3 +14,11 @@ Installation:
 ```
 pip3 install git+https://gitlab.com/leberwurscht/frshelpers.git
 ```
+
+To commit a new version:
+
+```
+git add ... # or use git-gui for that
+bump-my-version bump patch -m "<Commit message>"
+git push --tags origin master
+```

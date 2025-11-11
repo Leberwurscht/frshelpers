@@ -1,0 +1,21 @@
+[project]
+name = "frshelpers"
+authors = [
+  { name="Leberwurscht", email="leberwurscht@hoegners.de" },
+]
+description = "FRS helpers library"
+dependencies = [
+  'numpy',
+  'scipy>=1.4.0',
+]
+version = "0.0.14" #MARKER#bump-my-version
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://gitlab.com/leberwurscht/frshelpers"
