@@ -216,6 +216,7 @@ def evaluate(input_data, **kwargs):
   # compute relative amplitude change and phase for a few frequency bins
   bincenters_i = np.searchsorted(nu, bin_centers)
   amplitudes, phases = chunkiter.tools.concatenate((amp[:,bincenters_i],phase[:,bincenters_i]) for amp,phase in spectra)
+  phases = np.unwrap(phases, axis=0)
   
   phases_beforeavg = first_phases[:,bincenters_i]
   phases_beforeavg = phases_beforeavg - phases_beforeavg[[0],:]
